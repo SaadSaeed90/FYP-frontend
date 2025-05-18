@@ -6,6 +6,8 @@ import axios from "axios";
 
 const MultipleBugReports = () => {
   const [data, setData] = useState([]);
+  const [progress, setProgress] = useState(0);
+  const [isPredicting, setIsPredicting] = useState(false);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -69,7 +71,7 @@ const MultipleBugReports = () => {
       return;
     }
 
-    const titleField = fields[0]; // assuming first column is title or ID
+    const titleField = fields[0];
 
     const filteredData = fileData.map((row) => ({
       title: row[titleField] || "N/A",
@@ -77,6 +79,7 @@ const MultipleBugReports = () => {
     }));
 
     setData(filteredData);
+    setProgress(0);
   };
 
   const handlePrediction = async () => {
@@ -85,21 +88,28 @@ const MultipleBugReports = () => {
       return;
     }
 
-    const updatedData = await Promise.all(
-      data.map(async (item) => {
-        try {
-          const response = await axios.post("http://localhost:5000/predict", {
-            text: item.description,
-          });
-          return { ...item, severity: response.data.prediction };
-        } catch (error) {
-          console.error("Prediction error for:", item.title, error);
-          return { ...item, severity: "Prediction Failed" };
-        }
-      })
-    );
+    setIsPredicting(true);
+    setProgress(0);
+
+    const updatedData = [];
+
+    for (let i = 0; i < data.length; i++) {
+      try {
+        const response = await axios.post("http://localhost:5000/predict", {
+          text: data[i].description,
+        });
+        updatedData.push({ ...data[i], severity: response.data.prediction });
+      } catch (error) {
+        console.error("Prediction error for:", data[i].title, error);
+        updatedData.push({ ...data[i], severity: "Prediction Failed" });
+      }
+
+      // Update progress
+      setProgress(Math.round(((i + 1) / data.length) * 100));
+    }
 
     setData(updatedData);
+    setIsPredicting(false);
     alert("Prediction process completed. Check results below.");
   };
 
@@ -136,23 +146,39 @@ const MultipleBugReports = () => {
         <div className="mt-6">
           <button
             onClick={handlePrediction}
-            className="bg-navy text-white py-2 px-4 rounded mr-4"
+            disabled={isPredicting}
+            className={`${
+              isPredicting ? "bg-gray-400" : "bg-navy"
+            } text-white py-2 px-4 rounded mr-4`}
           >
-            Predict Severities
+            {isPredicting ? "Predicting..." : "Predict Severities"}
           </button>
           <button
             onClick={handleExport}
             className="bg-green-600 text-white py-2 px-4 rounded"
+            disabled={isPredicting}
           >
             Export to Excel
           </button>
+
+          {/* Progress bar */}
+          {isPredicting && (
+            <div className="w-full bg-gray-300 rounded mt-4 h-4">
+              <div
+                className="bg-navy h-4 rounded text-xs text-white text-center"
+                style={{ width: `${progress}%` }}
+              >
+                {progress}%
+              </div>
+            </div>
+          )}
 
           <div className="mt-6">
             <h3 className="text-xl font-semibold mb-2">Preview:</h3>
             <table className="table-auto w-full border border-gray-300">
               <thead>
                 <tr>
-                  <th className="border px-4 py-2">Title</th>
+                  <th className="border px-4 py-2">No.</th>
                   <th className="border px-4 py-2">Description</th>
                   <th className="border px-4 py-2">Predicted Severity</th>
                 </tr>
@@ -160,7 +186,7 @@ const MultipleBugReports = () => {
               <tbody>
                 {data.map((row, idx) => (
                   <tr key={idx}>
-                    <td className="border px-4 py-2">{row.title}</td>
+                    <td className="border px-4 py-2 text-center">{idx + 1}</td>
                     <td className="border px-4 py-2">{row.description}</td>
                     <td className="border px-4 py-2">{row.severity || "N/A"}</td>
                   </tr>
@@ -168,6 +194,7 @@ const MultipleBugReports = () => {
               </tbody>
             </table>
           </div>
+
         </div>
       )}
     </div>
