@@ -175,25 +175,33 @@ const MultipleBugReports = () => {
 
           <div className="mt-6">
             <h3 className="text-xl font-semibold mb-2">Preview:</h3>
-            <table className="table-auto w-full border border-gray-300">
-              <thead>
-                <tr>
-                  <th className="border px-4 py-2">No.</th>
-                  <th className="border px-4 py-2">Description</th>
-                  <th className="border px-4 py-2">Predicted Severity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((row, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-4 py-2 text-center">{idx + 1}</td>
-                    <td className="border px-4 py-2">{row.description}</td>
-                    <td className="border px-4 py-2">{row.severity || "N/A"}</td>
+            <div className="overflow-x-auto">
+              <table className="table-auto w-full border border-gray-300 text-sm">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="border px-2 py-2 text-left">No.</th>
+                    <th className="border px-2 py-2 text-left">Description</th>
+                    <th className="border px-2 py-2 text-left">Predicted Severity</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.map((row, idx) => (
+                    <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <td className="border px-2 py-2 text-center">{idx + 1}</td>
+                      <td className="border px-2 py-2 whitespace-normal break-words">
+                        {row.description}
+                      </td>
+                      <td className="border px-2 py-2 text-center">
+                        {row.severity || "N/A"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+
 
         </div>
       )}
